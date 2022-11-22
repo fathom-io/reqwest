@@ -8,6 +8,7 @@ use serde::Serialize;
 #[cfg(feature = "json")]
 use serde_json;
 use serde_urlencoded;
+use serde_qs;
 
 use super::body::{self, Body};
 #[cfg(feature = "multipart")]
@@ -389,12 +390,12 @@ impl RequestBuilder {
         let mut error = None;
         if let Ok(ref mut req) = self.request {
             let url = req.url_mut();
-            let mut pairs = url.query_pairs_mut();
-            let serializer = serde_urlencoded::Serializer::new(&mut pairs);
+            let serializer = match serde_qs::to_string(&query) {
+                Ok(serializer) => serializer,
+                Err(err) => error = Some(crate::error::builder(err)),
+            };
 
-            if let Err(err) = query.serialize(serializer) {
-                error = Some(crate::error::builder(err));
-            }
+            url.set_query(Some(&serializer));
         }
         if let Ok(ref mut req) = self.request {
             if let Some("") = req.url().query() {
