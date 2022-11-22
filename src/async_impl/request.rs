@@ -353,12 +353,10 @@ impl RequestBuilder {
         let mut error = None;
         if let Ok(ref mut req) = self.request {
             let url = req.url_mut();
-            let mut pairs = url.query_pairs_mut();
-            let serializer = serde_urlencoded::Serializer::new(&mut pairs);
-
-            if let Err(err) = query.serialize(serializer) {
-                error = Some(crate::error::builder(err));
-            }
+            match serde_qs::to_string(&query) {
+                Ok(serializer) => url.set_query(Some(&serializer)),
+                Err(err) => error = Some(crate::error::builder(err)),
+            };
         }
         if let Ok(ref mut req) = self.request {
             if let Some("") = req.url().query() {

@@ -390,12 +390,10 @@ impl RequestBuilder {
         let mut error = None;
         if let Ok(ref mut req) = self.request {
             let url = req.url_mut();
-            let serializer = match serde_qs::to_string(&query) {
-                Ok(serializer) => serializer,
+            match serde_qs::to_string(&query) {
+                Ok(serializer) => url.set_query(Some(&serializer)),
                 Err(err) => error = Some(crate::error::builder(err)),
             };
-
-            url.set_query(Some(&serializer));
         }
         if let Ok(ref mut req) = self.request {
             if let Some("") = req.url().query() {
